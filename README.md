@@ -1,7 +1,69 @@
 # Open Telemetry .Net Demo
 This demo is a simple .net Demo showcasing how to use Open Telemetry .Net SDK in your projects.
 
-## DEMO 001
+## Simple logger Console App Demo
+Now lets try a simple logger console app to see how this is done using the ILogger implementation of OpenTelemetry .Net SDK
+
+Simply create a new console application using the template and add the regular logging to it and finally configure the OpenTelemetry .Net SDK on it
+
+### Create a new Console Application and Run it
+
+Create a new console application and run it:
+```
+dotnet new console --output getting-started
+cd getting-started
+dotnet run
+```
+You should see the following output:
+```
+Hello World!
+```
+### Add the Logging and OpenTelemetry .Net SDK
+Install the latest `Microsoft.Extensions.Logging` and `OpenTelemetry.Exporter.Console` by adding the following to the `.csproj`
+
+```XML
+  <ItemGroup>
+      <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
+      <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.0.1" />
+  </ItemGroup>
+```
+
+Now change the `Program.cs` file to add the follwing usings:
+```C#
+using Microsoft.Extensions.Logging;
+using OpenTelemetry.Logs;
+```
+
+and now change the `Main` function to the following code:
+```c#
+var loggerFactory = LoggerFactory.Create(builder =>
+{
+    builder.AddOpenTelemetry(options => options
+        .AddConsoleExporter());
+});
+
+var logger = loggerFactory.CreateLogger<Program>();
+logger.LogInformation("Hello from {name} {price}.", "tomato", 2.99);
+```
+## Run the sample again
+Now simply run the console application again using the following console command
+```
+dotnet run
+```
+you should see the following output:
+```
+LogRecord.TraceId:            00000000000000000000000000000000
+LogRecord.SpanId:             0000000000000000
+LogRecord.Timestamp:          2021-12-16T00:38:05.1796692Z
+LogRecord.EventId:            0
+LogRecord.CategoryName:       Program
+LogRecord.LogLevel:           Information
+LogRecord.TraceFlags:         None
+LogRecord.State:              Hello from tomato 2.99.
+```
+
+
+## Open Telemetry .Net WebApi Demo - Trace
 To start the demo follow the following steps:
 
 ### Create a simple WebApi Project
@@ -65,71 +127,43 @@ Resource associated with Activity:
 
 you can use other exporters from other nuget packages to export your logs to any OpenTelemetry compatible endpoints by simply changing the `program.cs` file as we did and replace/add your new exporter to the `AddConsoleExporter()`
 
-## Simple logger Console App
-Now lets try a simple logger console app to see how this is done using the ILogger implementation of OpenTelemetry .Net SDK
 
-Simply create a new console application using the template and add the regular logging to it and finally configure the OpenTelemetry .Net SDK on it
-
-### Create a new Console Application and Run it
-
-Create a new console application and run it:
-```
-dotnet new console --output getting-started
-cd getting-started
-dotnet run
-```
-You should see the following output:
-```
-Hello World!
-```
-### Add the Logging and OpenTelemetry .Net SDK
-Install the latest `Microsoft.Extensions.Logging` and `OpenTelemetry.Exporter.Console` by adding the following to the `.csproj`
-
-```XML
-  <ItemGroup>
-      <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
-      <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.0.1" />
-  </ItemGroup>
-```
-
-Now change the `Program.cs` file to add the follwing usings:
-```C#
-using Microsoft.Extensions.Logging;
-using OpenTelemetry.Logs;
-```
-
-and now change the `Main` function to the following code:
-```c#
-var loggerFactory = LoggerFactory.Create(builder =>
-{
-    builder.AddOpenTelemetry(options => options
-        .AddConsoleExporter());
-});
-
-var logger = loggerFactory.CreateLogger<Program>();
-logger.LogInformation("Hello from {name} {price}.", "tomato", 2.99);
-```
-## Run the sample again
-Now simply run the console application again using the following console command
-```
-dotnet run
-```
-you should see the following output:
-```
-LogRecord.TraceId:            00000000000000000000000000000000
-LogRecord.SpanId:             0000000000000000
-LogRecord.Timestamp:          2021-12-16T00:38:05.1796692Z
-LogRecord.EventId:            0
-LogRecord.CategoryName:       Program
-LogRecord.LogLevel:           Information
-LogRecord.TraceFlags:         None
-LogRecord.State:              Hello from tomato 2.99.
-```
-
-## DEMO 2
-
+## Open Telemetry .Net WebApi Demo - Logging
 
 Now lets dive a little deeper in the code and add the full OpenTelemetry .Net SDK. this will allow us to focus on all aspects of Observability, from Metrics to Trace to Logging.
 
+### import all the packages
+ensure you add all the packages to your `.csproj` file
+```XML
+  <ItemGroup>
+    <PackageReference Include="OpenTelemetry" Version="1.2.0-rc1" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.2.0-rc1" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.2.0-rc1" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.2.0-rc1" />
+  </ItemGroup>
+```
+### Register Logging
+In the `Program.cs` add the following registration
+```C#
+builder.Logging.AddOpenTelemetry((builder) => {
+                                builder.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("example-app"))
+                                    .AddConsoleExporter();
+                                builder.IncludeFormattedMessage = true;
+                                builder.IncludeScopes = true;
+                                builder.ParseStateValues = true;
+            });
+```
+
+### Add normal logging entries as you would with ILogger
+In the `WeatherForecastController.cs` add logging entries as you would normaly
+
+```C#
+_logger.LogInformation("Something to Log about");
+```
+
+### Run the app
+Test running the app and check the console output to see the log formated as it should
 
 
+
+## Open Telemetry .Net WebApi Demo - Metrics
